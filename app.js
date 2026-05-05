@@ -1,8 +1,5 @@
-/* TGP Ultimate Dashboard - Firebase + USD */
+/* TGP Ultimate Dashboard v2 - Firebase + USD + Auto-calc + Profit + Linked tabs */
 
-// ============================================================
-//  FIREBASE - your config is already filled in
-// ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -26,62 +23,38 @@ const defaultData = {
 
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 
-function seedSampleData() {
-  const today = new Date();
-  const day = (n) => { const d = new Date(today); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); };
-  const data = JSON.parse(JSON.stringify(defaultData));
-  data.sales = [
-    { id: uid(), date: day(0), channel: 'TikTok', product: 'Sleep Gummies', units: 24, revenue: 600, notes: '' },
-    { id: uid(), date: day(0), channel: 'Shopify', product: 'Energy Gummies', units: 12, revenue: 360, notes: '' },
-    { id: uid(), date: day(1), channel: 'TikTok', product: 'Immune Gummies', units: 18, revenue: 450, notes: '' },
-    { id: uid(), date: day(2), channel: 'Shopify', product: 'Sleep Gummies', units: 9, revenue: 225, notes: '' },
-    { id: uid(), date: day(3), channel: 'TikTok', product: 'Sleep Gummies', units: 30, revenue: 750, notes: 'Live promo' },
-    { id: uid(), date: day(5), channel: 'Other', product: 'Energy Gummies', units: 6, revenue: 180, notes: '' },
-  ];
-  data.tiktok = [
-    { id: uid(), date: day(0), product: 'Sleep Gummies', inventory: 240, sales: 24, fulfilled: 22, cancelled: 1, returns: 1, claims: 0, refunded: 1, replaced: 0, notes: '' },
-    { id: uid(), date: day(1), product: 'Immune Gummies', inventory: 180, sales: 18, fulfilled: 17, cancelled: 1, returns: 0, claims: 0, refunded: 0, replaced: 0, notes: '' },
-    { id: uid(), date: day(3), product: 'Sleep Gummies', inventory: 210, sales: 30, fulfilled: 29, cancelled: 0, returns: 1, claims: 1, refunded: 1, replaced: 0, notes: 'Damage on transit' },
-  ];
-  data.shopify = [
-    { id: uid(), date: day(0), product: 'Energy Gummies', inventory: 150, sales: 12, fulfilled: 12, cancelled: 0, returns: 0, claims: 0, refunded: 0, replaced: 0, notes: '' },
-    { id: uid(), date: day(2), product: 'Sleep Gummies', inventory: 130, sales: 9, fulfilled: 8, cancelled: 1, returns: 0, claims: 0, refunded: 1, replaced: 0, notes: '' },
-  ];
-  data.marketing = [
-    { id: uid(), date: day(0), type: 'Ads', channel: 'TikTok', campaign: 'Sleep Gummies Launch', spend: 125, revenue: 600, notes: '' },
-    { id: uid(), date: day(1), type: 'Ads', channel: 'Meta', campaign: 'Immune Boost', spend: 90, revenue: 370, notes: '' },
-    { id: uid(), date: day(2), type: 'Coupon', channel: 'Shopify', campaign: 'WELCOME10', spend: 0, revenue: 225, notes: 'Discount 10%' },
-    { id: uid(), date: day(3), type: 'Affiliate', channel: 'TikTok', campaign: '@gummyfan', spend: 30, revenue: 150, notes: '' },
-  ];
-  data.inventory = [
-    { id: uid(), product: 'Sleep Gummies', sku: 'TGP-SLP-01', stock: 60, reorder: 80, tiktok: true, shopify: true, other: false, remarks: 'Bestseller' },
-    { id: uid(), product: 'Energy Gummies', sku: 'TGP-ENR-02', stock: 140, reorder: 60, tiktok: true, shopify: true, other: true, remarks: '' },
-    { id: uid(), product: 'Immune Gummies', sku: 'TGP-IMM-03', stock: 25, reorder: 50, tiktok: true, shopify: false, other: false, remarks: 'Push to Shopify' },
-    { id: uid(), product: 'Beauty Gummies', sku: 'TGP-BTY-04', stock: 280, reorder: 80, tiktok: false, shopify: true, other: true, remarks: 'Slow mover' },
-  ];
-  data.customer = [
-    { id: uid(), date: day(0), channel: 'TikTok', sentiment: 'Positive', rating: 5, category: 'Product', customer: 'Maria R.', comment: 'Loved the taste, helped me sleep!', status: 'Resolved', remarks: '' },
-    { id: uid(), date: day(1), channel: 'Shopify', sentiment: 'Negative', rating: 2, category: 'Delivery', customer: 'John D.', comment: 'Shipment arrived 5 days late.', status: 'Open', remarks: 'Coordinate w/ courier' },
-    { id: uid(), date: day(2), channel: 'TikTok', sentiment: 'Negative', rating: 1, category: 'Customer Service', customer: 'Anna L.', comment: 'No reply from support.', status: 'In Progress', remarks: 'Escalated to CS lead' },
-    { id: uid(), date: day(3), channel: 'Shopify', sentiment: 'Positive', rating: 5, category: 'Product', customer: 'Carl M.', comment: 'Great quality!', status: 'Resolved', remarks: '' },
-  ];
-  return data;
-}
-
 let state = JSON.parse(JSON.stringify(defaultData));
 let dateRange = { from: null, to: null, grain: 'day' };
 const charts = {};
 let isReady = false;
 let saveTimer = null;
 
+// ============================================================
+// MIGRATION: keeps existing data, adds new fields safely
+// ============================================================
+function migrateData(d) {
+  if (!d) return d;
+  // Inventory: add cost & price fields if missing
+  (d.inventory || []).forEach(p => {
+    if (p.cost === undefined) p.cost = 0;
+    if (p.price === undefined) p.price = 0;
+  });
+  // Sales: add units price fields if missing (revenue stays as-is)
+  (d.sales || []).forEach(s => {
+    if (s.price === undefined) s.price = s.units > 0 ? Number(s.revenue || 0) / Number(s.units) : 0;
+    if (s.cost === undefined) s.cost = 0;
+  });
+  return d;
+}
+
 async function initFirebase() {
   try {
     showSyncStatus('Connecting to cloud...');
     const snap = await getDoc(DASHBOARD_DOC);
     if (snap.exists()) {
-      state = { ...defaultData, ...snap.data() };
+      state = migrateData({ ...defaultData, ...snap.data() });
     } else {
-      state = seedSampleData();
+      state = JSON.parse(JSON.stringify(defaultData));
       await setDoc(DASHBOARD_DOC, state);
     }
     isReady = true;
@@ -92,7 +65,7 @@ async function initFirebase() {
       if (!snap.exists()) return;
       const remote = snap.data();
       if (JSON.stringify(remote) !== JSON.stringify(state)) {
-        state = { ...defaultData, ...remote };
+        state = migrateData({ ...defaultData, ...remote });
         renderAll();
         showSyncStatus('✓ Updated from cloud');
       }
@@ -100,7 +73,6 @@ async function initFirebase() {
   } catch (err) {
     console.error('Firebase error:', err);
     showSyncStatus('⚠ Offline');
-    state = seedSampleData();
     isReady = true;
     applyTheme();
     renderAll();
@@ -131,6 +103,7 @@ function showSyncStatus(msg) {
 }
 
 const usd = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const usd2 = (n) => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const num = (n) => Number(n || 0).toLocaleString('en-US');
 const pct = (n) => (Math.round((Number(n) || 0) * 10) / 10) + '%';
 
@@ -167,11 +140,21 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.add('hidden'), 2200);
 }
 
-const titles = { executive: 'Executive Summary', sales: 'Sales Performance', tiktok: 'TikTok Shop', shopify: 'Shopify', marketing: 'Marketing Performance', inventory: 'Inventory', customer: 'Customer Experience' };
+const titles = {
+  executive: 'Executive Summary',
+  sales: 'Sales Performance',
+  tiktok: 'TikTok Shop',
+  shopify: 'Shopify',
+  marketing: 'Marketing Performance',
+  inventory: 'Inventory',
+  customer: 'Customer Experience',
+  profitability: 'Profitability'
+};
 
 function setView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  document.getElementById(`view-${view}`).classList.remove('hidden');
+  const target = document.getElementById(`view-${view}`);
+  if (target) target.classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === view));
   document.getElementById('viewTitle').textContent = titles[view];
   document.getElementById('sidebar').classList.remove('open');
@@ -220,7 +203,8 @@ document.getElementById('importFile').addEventListener('change', (e) => {
     try {
       const obj = JSON.parse(ev.target.result);
       if (!confirm('This will REPLACE all current cloud data. Continue?')) return;
-      state = { ...defaultData, ...obj }; saveData(); renderAll(); showToast('Data imported');
+      state = migrateData({ ...defaultData, ...obj });
+      saveData(); renderAll(); showToast('Data imported');
     } catch { showToast('Import failed'); }
   };
   reader.readAsText(file);
@@ -231,18 +215,30 @@ const modalForm = document.getElementById('modalForm');
 const modalTitle = document.getElementById('modalTitle');
 let editing = null;
 
+// Helper: get product list for dropdowns
+function productOptions() {
+  return state.inventory.map(p => p.product).filter(Boolean);
+}
+
+// Helper: find product details by name
+function findProduct(name) {
+  return state.inventory.find(p => p.product === name);
+}
+
 const formSchemas = {
   sales: { title: 'Sale Entry', fields: [
     { name: 'date', label: 'Date', type: 'date', required: true },
     { name: 'channel', label: 'Channel', type: 'select', options: ['TikTok','Shopify','Other'], required: true },
-    { name: 'product', label: 'Product', type: 'text', required: true },
+    { name: 'product', label: 'Product', type: 'product-select', required: true },
     { name: 'units', label: 'Units Sold', type: 'number', step: 1 },
-    { name: 'revenue', label: 'Revenue ($)', type: 'number', step: 0.01 },
+    { name: 'price', label: 'Price per Unit ($)', type: 'number', step: 0.01, hint: 'Auto-fills from product. Override for discounts.' },
+    { name: 'cost', label: 'Cost per Unit ($)', type: 'number', step: 0.01, hint: 'Auto-fills from product.' },
+    { name: 'revenue', label: 'Revenue ($) — auto-calculated', type: 'number', step: 0.01, readonly: true, hint: 'Units × Price. You can override.' },
     { name: 'notes', label: 'Notes / Remarks', type: 'textarea', full: true }
   ]},
-  tiktok: { title: 'TikTok Shop Entry', fields: [
+  tiktok: { title: 'TikTok Shop Operational Entry', fields: [
     { name: 'date', label: 'Date', type: 'date', required: true },
-    { name: 'product', label: 'Product', type: 'text', required: true },
+    { name: 'product', label: 'Product', type: 'product-select', required: true },
     { name: 'inventory', label: 'Inventory', type: 'number' },
     { name: 'sales', label: 'Sales (units)', type: 'number' },
     { name: 'fulfilled', label: 'Fulfilled', type: 'number' },
@@ -253,9 +249,9 @@ const formSchemas = {
     { name: 'replaced', label: 'Replacements', type: 'number' },
     { name: 'notes', label: 'Notes / Remarks', type: 'textarea', full: true }
   ]},
-  shopify: { title: 'Shopify Entry', fields: [
+  shopify: { title: 'Shopify Operational Entry', fields: [
     { name: 'date', label: 'Date', type: 'date', required: true },
-    { name: 'product', label: 'Product', type: 'text', required: true },
+    { name: 'product', label: 'Product', type: 'product-select', required: true },
     { name: 'inventory', label: 'Inventory', type: 'number' },
     { name: 'sales', label: 'Sales (units)', type: 'number' },
     { name: 'fulfilled', label: 'Fulfilled', type: 'number' },
@@ -278,8 +274,10 @@ const formSchemas = {
   inventory: { title: 'Product / Inventory', fields: [
     { name: 'product', label: 'Product Name', type: 'text', required: true },
     { name: 'sku', label: 'SKU', type: 'text' },
-    { name: 'stock', label: 'Current Stock', type: 'number' },
+    { name: 'stock', label: 'Current Stock (units)', type: 'number' },
     { name: 'reorder', label: 'Reorder Threshold', type: 'number' },
+    { name: 'cost', label: 'Cost per Unit ($)', type: 'number', step: 0.01, hint: 'Your cost (cost of goods sold).' },
+    { name: 'price', label: 'Selling Price per Unit ($)', type: 'number', step: 0.01, hint: 'What you sell it for.' },
     { name: 'tiktok', label: 'Live on TikTok', type: 'checkbox' },
     { name: 'shopify', label: 'Live on Shopify', type: 'checkbox' },
     { name: 'other', label: 'Live on Other Store', type: 'checkbox' },
@@ -306,12 +304,62 @@ function openModal(type, id = null) {
   modalForm.innerHTML = schema.fields.map(f => {
     const val = existing[f.name] ?? (f.type === 'checkbox' ? false : '');
     const wrapClass = f.full ? 'full' : '';
-    if (f.type === 'select') return `<label class="${wrapClass}">${f.label}<select name="${f.name}" ${f.required?'required':''}><option value="">— Select —</option>${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></label>`;
-    if (f.type === 'textarea') return `<label class="${wrapClass}">${f.label}<textarea name="${f.name}">${val ?? ''}</textarea></label>`;
+    const hint = f.hint ? `<small style="display:block;color:#8b94b8;font-size:11px;margin-top:4px;">${f.hint}</small>` : '';
+    if (f.type === 'product-select') {
+      const options = productOptions();
+      return `<label class="${wrapClass}">${f.label}<select name="${f.name}" ${f.required?'required':''} data-product-select="1"><option value="">— Select Product —</option>${options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>${hint}</label>`;
+    }
+    if (f.type === 'select') {
+      return `<label class="${wrapClass}">${f.label}<select name="${f.name}" ${f.required?'required':''}><option value="">— Select —</option>${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>${hint}</label>`;
+    }
+    if (f.type === 'textarea') return `<label class="${wrapClass}">${f.label}<textarea name="${f.name}">${val ?? ''}</textarea>${hint}</label>`;
     if (f.type === 'checkbox') return `<label class="${wrapClass}" style="flex-direction:row;align-items:center;gap:10px;"><input type="checkbox" name="${f.name}" ${val?'checked':''} style="width:auto;" /><span>${f.label}</span></label>`;
     const step = f.step ? `step="${f.step}"` : '';
-    return `<label class="${wrapClass}">${f.label}<input type="${f.type}" name="${f.name}" value="${val ?? ''}" ${step} ${f.required?'required':''} /></label>`;
+    const ro = f.readonly ? 'data-readonly="1" style="background:rgba(124,92,255,0.08);"' : '';
+    return `<label class="${wrapClass}">${f.label}<input type="${f.type}" name="${f.name}" value="${val ?? ''}" ${step} ${f.required?'required':''} ${ro} />${hint}</label>`;
   }).join('');
+  
+  // Auto-fill on product change (for sales form & channel forms)
+  const productSelect = modalForm.querySelector('[data-product-select]');
+  if (productSelect && type === 'sales') {
+    const wireAutoFill = () => {
+      const productName = productSelect.value;
+      const product = findProduct(productName);
+      if (product) {
+        const priceInput = modalForm.querySelector('[name="price"]');
+        const costInput = modalForm.querySelector('[name="cost"]');
+        if (priceInput && !priceInput.value) priceInput.value = product.price || 0;
+        if (costInput && !costInput.value) costInput.value = product.cost || 0;
+        recalcRevenue();
+      }
+    };
+    productSelect.addEventListener('change', wireAutoFill);
+  }
+  
+  // Auto-calculate revenue from units × price (for sales form)
+  function recalcRevenue() {
+    if (type !== 'sales') return;
+    const units = Number(modalForm.querySelector('[name="units"]')?.value || 0);
+    const price = Number(modalForm.querySelector('[name="price"]')?.value || 0);
+    const revInput = modalForm.querySelector('[name="revenue"]');
+    if (revInput && !revInput.dataset.userEdited) {
+      revInput.value = (units * price).toFixed(2);
+    }
+  }
+  if (type === 'sales') {
+    ['units','price'].forEach(n => {
+      const el = modalForm.querySelector(`[name="${n}"]`);
+      if (el) el.addEventListener('input', recalcRevenue);
+    });
+    const revEl = modalForm.querySelector('[name="revenue"]');
+    if (revEl) {
+      // Allow override by editing the revenue field directly
+      revEl.removeAttribute('data-readonly');
+      revEl.style.background = 'rgba(124,92,255,0.08)';
+      revEl.addEventListener('input', () => { revEl.dataset.userEdited = '1'; });
+    }
+  }
+  
   modal.classList.remove('hidden');
 }
 
@@ -335,9 +383,55 @@ document.getElementById('modalSave').addEventListener('click', () => {
   for (const f of schema.fields) {
     if (f.required && !record[f.name] && record[f.name] !== 0) { showToast(`${f.label} is required`); return; }
   }
-  if (!id) state[type].push(record);
+  
+  // FEATURE: when saving a sales entry, auto-link to channel tab
+  if (type === 'sales' && !id) {
+    state.sales.push(record);
+    autoLinkSaleToChannel(record);
+  } else if (type === 'sales' && id) {
+    // For edits, also update linked channel record if any
+    autoLinkSaleToChannel(record, id);
+  } else if (!id) {
+    state[type].push(record);
+  }
+  
   saveData(); closeModal(); renderAll(); showToast(id ? 'Entry updated' : 'Entry added');
 });
+
+// FEATURE 3: Auto-link sales tab to TikTok/Shopify operational tabs
+function autoLinkSaleToChannel(sale, editingId) {
+  const channelKey = sale.channel === 'TikTok' ? 'tiktok' : sale.channel === 'Shopify' ? 'shopify' : null;
+  if (!channelKey) return;
+  
+  // Find existing operational record for same date+product+linkedSaleId
+  const linkId = editingId || sale.id;
+  let existing = state[channelKey].find(r => r._linkedSaleId === linkId);
+  
+  if (existing) {
+    // Update existing linked record
+    existing.date = sale.date;
+    existing.product = sale.product;
+    existing.sales = sale.units;
+    existing.fulfilled = existing.fulfilled || sale.units;
+  } else if (!editingId) {
+    // Create new linked operational record
+    state[channelKey].push({
+      id: uid(),
+      _linkedSaleId: sale.id,
+      date: sale.date,
+      product: sale.product,
+      inventory: 0,
+      sales: sale.units,
+      fulfilled: sale.units,
+      cancelled: 0,
+      returns: 0,
+      claims: 0,
+      refunded: 0,
+      replaced: 0,
+      notes: '(Auto-linked from Sales tab)'
+    });
+  }
+}
 
 document.addEventListener('click', (e) => {
   const addBtn = e.target.closest('[data-add]');
@@ -348,6 +442,12 @@ document.addEventListener('click', (e) => {
   if (delBtn) {
     const type = delBtn.dataset.del; const id = delBtn.dataset.id;
     if (confirm('Delete this entry?')) {
+      // If deleting a sale, also delete linked channel record
+      if (type === 'sales') {
+        ['tiktok','shopify'].forEach(ch => {
+          state[ch] = state[ch].filter(r => r._linkedSaleId !== id);
+        });
+      }
       state[type] = state[type].filter(r => r.id !== id);
       saveData(); renderAll(); showToast('Entry deleted');
     }
@@ -365,23 +465,46 @@ function filteredShopify() { return state.shopify.filter(r => inRange(r.date)); 
 function filteredMarketing() { return state.marketing.filter(r => inRange(r.date)); }
 function filteredCustomer() { return state.customer.filter(r => inRange(r.date)); }
 
+// FEATURE 4: profit calculations
+function saleGrossProfit(sale) {
+  const units = Number(sale.units || 0);
+  const revenue = Number(sale.revenue || 0);
+  const cost = Number(sale.cost || 0);
+  return revenue - (units * cost);
+}
+
 function execMetrics() {
   const sales = filteredSales(); const tt = filteredTikTok(); const sp = filteredShopify(); const mk = filteredMarketing();
   const totalRevenue = sales.reduce((a,b) => a + Number(b.revenue||0), 0);
-  const orders = sales.reduce((a,b) => a + Number(b.units||0), 0);
+  // FEATURE 2: Orders = number of transactions (not sum of units)
+  const orders = sales.length;
+  const unitsSold = sales.reduce((a,b) => a + Number(b.units||0), 0);
   const cancellations = tt.reduce((a,b)=>a+Number(b.cancelled||0),0) + sp.reduce((a,b)=>a+Number(b.cancelled||0),0);
   const returnsR = tt.reduce((a,b)=>a+Number(b.returns||0)+Number(b.refunded||0),0) + sp.reduce((a,b)=>a+Number(b.returns||0)+Number(b.refunded||0),0);
   const fulfilled = tt.reduce((a,b)=>a+Number(b.fulfilled||0),0) + sp.reduce((a,b)=>a+Number(b.fulfilled||0),0);
   const adSpend = mk.reduce((a,b)=>a+Number(b.spend||0),0);
   const adRevenue = mk.reduce((a,b)=>a+Number(b.revenue||0),0);
   const roas = adSpend > 0 ? (adRevenue / adSpend) : 0;
-  return { totalRevenue, orders, aov: orders > 0 ? totalRevenue / orders : 0, cancellations, cancelRate: (cancellations + fulfilled) > 0 ? (cancellations/(cancellations+fulfilled))*100 : 0, returnsR, returnsRate: fulfilled > 0 ? (returnsR/fulfilled)*100 : 0, adSpend, roas };
+  // Profit
+  const grossProfit = sales.reduce((a, s) => a + saleGrossProfit(s), 0);
+  const netProfit = grossProfit - adSpend;
+  const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  return {
+    totalRevenue, orders, unitsSold,
+    aov: orders > 0 ? totalRevenue / orders : 0,
+    cancellations,
+    cancelRate: (cancellations + fulfilled) > 0 ? (cancellations/(cancellations+fulfilled))*100 : 0,
+    returnsR,
+    returnsRate: fulfilled > 0 ? (returnsR/fulfilled)*100 : 0,
+    adSpend, roas, grossProfit, netProfit, profitMargin
+  };
 }
 
 function renderExecutive() {
   const m = execMetrics();
   document.getElementById('kpiRevenue').textContent = usd(m.totalRevenue);
   document.getElementById('kpiOrders').textContent = num(m.orders);
+  if (document.getElementById('kpiOrdersSub')) document.getElementById('kpiOrdersSub').textContent = num(m.unitsSold) + ' units';
   document.getElementById('kpiAOV').textContent = usd(m.aov);
   document.getElementById('kpiCancel').textContent = num(m.cancellations);
   document.getElementById('kpiCancelRate').textContent = pct(m.cancelRate) + ' rate';
@@ -389,6 +512,9 @@ function renderExecutive() {
   document.getElementById('kpiReturnsRate').textContent = pct(m.returnsRate) + ' rate';
   document.getElementById('kpiROAS').textContent = (Math.round(m.roas*10)/10) + 'x';
   document.getElementById('kpiAdSpend').textContent = usd(m.adSpend) + ' spent';
+  if (document.getElementById('kpiGrossProfit')) document.getElementById('kpiGrossProfit').textContent = usd(m.grossProfit);
+  if (document.getElementById('kpiNetProfit')) document.getElementById('kpiNetProfit').textContent = usd(m.netProfit);
+  if (document.getElementById('kpiProfitMargin')) document.getElementById('kpiProfitMargin').textContent = pct(m.profitMargin);
 
   const sales = filteredSales();
   const channels = ['TikTok','Shopify','Other'];
@@ -406,6 +532,7 @@ function renderExecutive() {
   const mix = channels.map(ch => sales.filter(r=>r.channel===ch).reduce((a,b)=>a+Number(b.revenue||0),0));
   drawChart('execMixChart', 'doughnut', { labels: channels, datasets: [{ data: mix, backgroundColor: ['#7c5cff','#22d3ee','#34d399'], borderWidth: 0 }] });
 
+  // Top products by revenue
   const totals = new Map();
   sales.forEach(r => {
     const k = `${r.product}||${r.channel}`;
@@ -429,7 +556,10 @@ function renderSales() {
   const channelFilter = document.getElementById('salesChannelFilter').value;
   const rows = filteredSales().filter(r => !channelFilter || r.channel === channelFilter).sort((a,b) => (b.date||'').localeCompare(a.date||''));
   const body = document.querySelector('#salesTable tbody');
-  body.innerHTML = rows.length ? rows.map(r => `<tr><td>${r.date}</td><td><span class="pill ${r.channel==='TikTok'?'purple':r.channel==='Shopify'?'blue':'gray'}">${r.channel}</span></td><td>${r.product}</td><td>${num(r.units)}</td><td>${usd(r.revenue)}</td><td>${r.notes || ''}</td><td><div class="row-actions"><button data-edit="sales" data-id="${r.id}">Edit</button><button class="danger" data-del="sales" data-id="${r.id}">Delete</button></div></td></tr>`).join('') : `<tr><td colspan="7" class="empty">No sales in range.</td></tr>`;
+  body.innerHTML = rows.length ? rows.map(r => {
+    const profit = saleGrossProfit(r);
+    return `<tr><td>${r.date}</td><td><span class="pill ${r.channel==='TikTok'?'purple':r.channel==='Shopify'?'blue':'gray'}">${r.channel}</span></td><td>${r.product}</td><td>${num(r.units)}</td><td>${usd(r.revenue)}</td><td style="color:${profit>=0?'#34d399':'#f87171'};">${usd(profit)}</td><td>${r.notes || ''}</td><td><div class="row-actions"><button data-edit="sales" data-id="${r.id}">Edit</button><button class="danger" data-del="sales" data-id="${r.id}">Delete</button></div></td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">No sales in range. Click "+ Add Sale Entry".</td></tr>`;
 
   const trend = groupByBucket(filteredSales(), r => r.revenue);
   drawChart('salesTrendChart', 'line', { labels: trend.map(t=>t[0]), datasets: [{ label: 'Revenue', data: trend.map(t=>t[1]), borderColor: '#7c5cff', backgroundColor: 'rgba(124,92,255,0.18)', fill:true, tension:0.35, borderWidth:2 }] });
@@ -447,7 +577,10 @@ function renderChannel(type, prefix) {
 
   const rows = data.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const body = document.querySelector(`#${type}Table tbody`);
-  body.innerHTML = rows.length ? rows.map(r => `<tr><td>${r.date}</td><td>${r.product}</td><td>${num(r.inventory)}</td><td>${num(r.sales)}</td><td>${num(r.fulfilled)}</td><td>${num(r.cancelled)}</td><td>${num(r.returns)}</td><td>${num(r.claims)}</td><td>${num(r.refunded)}</td><td>${num(r.replaced)}</td><td>${r.notes || ''}</td><td><div class="row-actions"><button data-edit="${type}" data-id="${r.id}">Edit</button><button class="danger" data-del="${type}" data-id="${r.id}">Delete</button></div></td></tr>`).join('') : `<tr><td colspan="12" class="empty">No entries.</td></tr>`;
+  body.innerHTML = rows.length ? rows.map(r => {
+    const linkedTag = r._linkedSaleId ? '<span class="pill purple" style="font-size:10px;">🔗 Linked</span> ' : '';
+    return `<tr><td>${r.date}</td><td>${linkedTag}${r.product}</td><td>${num(r.inventory)}</td><td>${num(r.sales)}</td><td>${num(r.fulfilled)}</td><td>${num(r.cancelled)}</td><td>${num(r.returns)}</td><td>${num(r.claims)}</td><td>${num(r.refunded)}</td><td>${num(r.replaced)}</td><td>${r.notes || ''}</td><td><div class="row-actions"><button data-edit="${type}" data-id="${r.id}">Edit</button><button class="danger" data-del="${type}" data-id="${r.id}">Delete</button></div></td></tr>`;
+  }).join('') : `<tr><td colspan="12" class="empty">No entries.</td></tr>`;
 
   const labels = Array.from(new Set(data.map(r => bucketKey(r.date)))).sort();
   const series = (key) => labels.map(l => data.filter(r => bucketKey(r.date)===l).reduce((a,b)=>a+Number(b[key]||0),0));
@@ -501,7 +634,11 @@ function renderInventory() {
   const search = (document.getElementById('inventorySearch').value || '').toLowerCase();
   const rows = state.inventory.map(r => ({ ...r, _level: stockLevel(r.stock, r.reorder) })).filter(r => !stockFilter || r._level.label === stockFilter).filter(r => !search || (r.product+' '+r.sku).toLowerCase().includes(search));
   const body = document.querySelector('#inventoryTable tbody');
-  body.innerHTML = rows.length ? rows.map(r => `<tr><td><strong>${r.product}</strong></td><td>${r.sku || ''}</td><td>${num(r.stock)}</td><td><span class="pill ${r._level.cls}">${r._level.label}</span></td><td>${r.tiktok ? '<span class="pill purple">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${r.shopify ? '<span class="pill blue">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${r.other ? '<span class="pill green">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${num(r.reorder)}</td><td>${r.remarks || r._level.remark}</td><td><div class="row-actions"><button data-edit="inventory" data-id="${r.id}">Edit</button><button class="danger" data-del="inventory" data-id="${r.id}">Delete</button></div></td></tr>`).join('') : `<tr><td colspan="10" class="empty">No products.</td></tr>`;
+  body.innerHTML = rows.length ? rows.map(r => {
+    const margin = r.price > 0 ? ((r.price - r.cost) / r.price) * 100 : 0;
+    const marginColor = margin >= 50 ? 'green' : margin >= 25 ? 'yellow' : 'red';
+    return `<tr><td><strong>${r.product}</strong></td><td>${r.sku || ''}</td><td>${num(r.stock)}</td><td><span class="pill ${r._level.cls}">${r._level.label}</span></td><td>${usd2(r.cost)}</td><td>${usd2(r.price)}</td><td><span class="pill ${marginColor}">${margin.toFixed(0)}%</span></td><td>${r.tiktok ? '<span class="pill purple">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${r.shopify ? '<span class="pill blue">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${r.other ? '<span class="pill green">Live</span>' : '<span class="pill gray">—</span>'}</td><td>${num(r.reorder)}</td><td>${r.remarks || r._level.remark}</td><td><div class="row-actions"><button data-edit="inventory" data-id="${r.id}">Edit</button><button class="danger" data-del="inventory" data-id="${r.id}">Delete</button></div></td></tr>`;
+  }).join('') : `<tr><td colspan="13" class="empty">No products. Add one to start.</td></tr>`;
 
   const levels = ['Critical','Low','Healthy','Overstock'];
   drawChart('invHealthChart', 'doughnut', { labels: levels, datasets: [{ data: levels.map(l => state.inventory.filter(p => stockLevel(p.stock,p.reorder).label===l).length), backgroundColor: ['#f87171','#fbbf24','#34d399','#22d3ee'], borderWidth: 0 }] });
@@ -538,6 +675,74 @@ function renderCustomer() {
   drawChart('cxCategoryChart', 'bar', { labels: cats, datasets: [{ label: 'Complaints', data: cats.map(c => data.filter(r=>r.sentiment==='Negative' && r.category===c).length), backgroundColor: ['#7c5cff','#22d3ee','#fbbf24','#f87171','#8b94b8'], borderRadius: 8 }] });
 }
 
+// FEATURE 5: Profitability view
+function renderProfitability() {
+  if (!document.getElementById('view-profitability')) return;
+  const sales = filteredSales();
+  const mk = filteredMarketing();
+  
+  const totalRevenue = sales.reduce((a,b) => a + Number(b.revenue||0), 0);
+  const totalCOGS = sales.reduce((a,s) => a + (Number(s.units||0) * Number(s.cost||0)), 0);
+  const grossProfit = totalRevenue - totalCOGS;
+  const adSpend = mk.reduce((a,b) => a + Number(b.spend||0), 0);
+  const netProfit = grossProfit - adSpend;
+  const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+  
+  document.getElementById('pfRevenue').textContent = usd(totalRevenue);
+  document.getElementById('pfCOGS').textContent = usd(totalCOGS);
+  document.getElementById('pfGrossProfit').textContent = usd(grossProfit);
+  document.getElementById('pfGrossProfit').style.color = grossProfit >= 0 ? '#34d399' : '#f87171';
+  document.getElementById('pfAdSpend').textContent = usd(adSpend);
+  document.getElementById('pfNetProfit').textContent = usd(netProfit);
+  document.getElementById('pfNetProfit').style.color = netProfit >= 0 ? '#34d399' : '#f87171';
+  document.getElementById('pfGrossMargin').textContent = pct(grossMargin);
+  document.getElementById('pfNetMargin').textContent = pct(netMargin);
+  
+  // Per-product profitability
+  const byProduct = new Map();
+  sales.forEach(s => {
+    const k = s.product || 'Unknown';
+    const cur = byProduct.get(k) || { product: k, units: 0, revenue: 0, cogs: 0 };
+    cur.units += Number(s.units||0);
+    cur.revenue += Number(s.revenue||0);
+    cur.cogs += Number(s.units||0) * Number(s.cost||0);
+    byProduct.set(k, cur);
+  });
+  const productRows = Array.from(byProduct.values()).map(p => ({
+    ...p,
+    profit: p.revenue - p.cogs,
+    margin: p.revenue > 0 ? ((p.revenue - p.cogs) / p.revenue) * 100 : 0
+  })).sort((a,b) => b.profit - a.profit);
+  
+  const pBody = document.querySelector('#profitProductTable tbody');
+  pBody.innerHTML = productRows.length ? productRows.map(p => {
+    const marginCol = p.margin >= 50 ? 'green' : p.margin >= 25 ? 'yellow' : 'red';
+    return `<tr><td><strong>${p.product}</strong></td><td>${num(p.units)}</td><td>${usd(p.revenue)}</td><td>${usd(p.cogs)}</td><td style="color:${p.profit>=0?'#34d399':'#f87171'};font-weight:600;">${usd(p.profit)}</td><td><span class="pill ${marginCol}">${p.margin.toFixed(0)}%</span></td></tr>`;
+  }).join('') : `<tr><td colspan="6" class="empty">No sales data yet. Add sales with product cost & price to see profitability.</td></tr>`;
+  
+  // Profit trend chart
+  const labels = Array.from(new Set(sales.map(r => bucketKey(r.date)))).sort();
+  const profitSeries = labels.map(l => {
+    const ds = sales.filter(r => bucketKey(r.date) === l);
+    return ds.reduce((a, s) => a + saleGrossProfit(s), 0);
+  });
+  const revSeries = labels.map(l => sales.filter(r => bucketKey(r.date) === l).reduce((a,b) => a + Number(b.revenue||0), 0));
+  drawChart('profitTrendChart', 'line', {
+    labels,
+    datasets: [
+      { label: 'Revenue', data: revSeries, borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.15)', tension: 0.35, fill: true, borderWidth: 2 },
+      { label: 'Gross Profit', data: profitSeries, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.35, fill: true, borderWidth: 2 }
+    ]
+  });
+  
+  // Profit breakdown bar
+  drawChart('profitBreakdownChart', 'bar', {
+    labels: ['Revenue','COGS','Gross Profit','Ad Spend','Net Profit'],
+    datasets: [{ label: '$', data: [totalRevenue, totalCOGS, grossProfit, adSpend, netProfit], backgroundColor: ['#22d3ee','#fbbf24','#34d399','#7c5cff', netProfit >= 0 ? '#10b981' : '#f87171'], borderRadius: 8 }]
+  });
+}
+
 function chartTextColor() { return getComputedStyle(document.body).getPropertyValue('--text').trim() || '#e8ecf8'; }
 function chartGrid() { return (state.settings && state.settings.theme === 'light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'; }
 function drawChart(canvasId, type, data) {
@@ -554,7 +759,7 @@ function drawChart(canvasId, type, data) {
 
 function renderAll() {
   if (!isReady) return;
-  renderExecutive(); renderSales(); renderChannel('tiktok', 'tt'); renderChannel('shopify', 'sp'); renderMarketing(); renderInventory(); renderCustomer();
+  renderExecutive(); renderSales(); renderChannel('tiktok', 'tt'); renderChannel('shopify', 'sp'); renderMarketing(); renderInventory(); renderCustomer(); renderProfitability();
 }
 
 initFirebase();
