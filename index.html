@@ -23,6 +23,7 @@
     <nav class="nav">
       <button class="nav-item active" data-view="executive"><span class="nav-icon">▣</span> Executive Summary</button>
       <button class="nav-item" data-view="sales"><span class="nav-icon">▲</span> Sales Performance</button>
+      <button class="nav-item" data-view="profitability"><span class="nav-icon">$</span> Profitability</button>
       <button class="nav-item" data-view="tiktok"><span class="nav-icon">♪</span> TikTok Shop</button>
       <button class="nav-item" data-view="shopify"><span class="nav-icon">●</span> Shopify</button>
       <button class="nav-item" data-view="marketing"><span class="nav-icon">✦</span> Marketing</button>
@@ -57,11 +58,16 @@
     <section class="view" id="view-executive">
       <div class="kpi-grid">
         <div class="kpi-card grad-1"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-sub" id="kpiRevenueSub">All channels</div></div>
-        <div class="kpi-card grad-2"><div class="kpi-label">Orders</div><div class="kpi-value" id="kpiOrders">0</div><div class="kpi-sub" id="kpiOrdersSub">Combined</div></div>
-        <div class="kpi-card grad-3"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="kpiAOV">$0</div><div class="kpi-sub">Across stores</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Orders</div><div class="kpi-value" id="kpiOrders">0</div><div class="kpi-sub" id="kpiOrdersSub">0 units</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="kpiAOV">$0</div><div class="kpi-sub">Per transaction</div></div>
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="kpiCancel">0</div><div class="kpi-sub" id="kpiCancelRate">0% rate</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns / Refunds</div><div class="kpi-value" id="kpiReturns">0</div><div class="kpi-sub" id="kpiReturnsRate">0% rate</div></div>
         <div class="kpi-card grad-6"><div class="kpi-label">Ad Spend / ROAS</div><div class="kpi-value" id="kpiROAS">0×</div><div class="kpi-sub" id="kpiAdSpend">$0 spent</div></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card grad-3"><div class="kpi-label">Gross Profit</div><div class="kpi-value" id="kpiGrossProfit">$0</div><div class="kpi-sub">Revenue − COGS</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Net Profit</div><div class="kpi-value" id="kpiNetProfit">$0</div><div class="kpi-sub">After ad spend</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Profit Margin</div><div class="kpi-value" id="kpiProfitMargin">0%</div><div class="kpi-sub">Gross profit ÷ revenue</div></div>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Revenue by Channel</h3><span class="badge">Live</span></div><canvas id="execRevenueChart" height="160"></canvas></div>
@@ -74,13 +80,34 @@
     </section>
     <section class="view hidden" id="view-sales">
       <div class="card">
-        <div class="card-head"><h3>Sales Entries</h3><button class="primary-btn" data-add="sales">+ Add Sale Entry</button></div>
+        <div class="card-head"><h3>Sales Entries <span class="badge" style="margin-left:8px;background:rgba(124,92,255,0.2);color:#7c5cff;">Auto-syncs to TikTok / Shopify tabs</span></h3><button class="primary-btn" data-add="sales">+ Add Sale Entry</button></div>
         <div class="filter-row"><select id="salesChannelFilter"><option value="">All Channels</option><option value="TikTok">TikTok Shop</option><option value="Shopify">Shopify</option><option value="Other">Other</option></select></div>
-        <table class="data-table" id="salesTable"><thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Revenue</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
+        <table class="data-table" id="salesTable"><thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Sales Trend</h3></div><canvas id="salesTrendChart" height="140"></canvas></div>
         <div class="card"><div class="card-head"><h3>Channel Comparison</h3></div><canvas id="salesChannelChart" height="140"></canvas></div>
+      </div>
+    </section>
+    <section class="view hidden" id="view-profitability">
+      <div class="kpi-grid">
+        <div class="kpi-card grad-2"><div class="kpi-label">Revenue</div><div class="kpi-value" id="pfRevenue">$0</div><div class="kpi-sub">Total sales</div></div>
+        <div class="kpi-card grad-4"><div class="kpi-label">Cost of Goods</div><div class="kpi-value" id="pfCOGS">$0</div><div class="kpi-sub">Units × cost</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Gross Profit</div><div class="kpi-value" id="pfGrossProfit">$0</div><div class="kpi-sub">Before ad spend</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Ad Spend</div><div class="kpi-value" id="pfAdSpend">$0</div><div class="kpi-sub">Marketing</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Net Profit</div><div class="kpi-value" id="pfNetProfit">$0</div><div class="kpi-sub">After all costs</div></div>
+        <div class="kpi-card grad-5"><div class="kpi-label">Margins</div><div class="kpi-value" id="pfGrossMargin">0%</div><div class="kpi-sub">Gross / Net: <span id="pfNetMargin">0%</span></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Profit by Product</h3></div>
+        <table class="data-table" id="profitProductTable">
+          <thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Cost of Goods</th><th>Gross Profit</th><th>Margin</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Revenue vs Profit Trend</h3></div><canvas id="profitTrendChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Profit Breakdown</h3></div><canvas id="profitBreakdownChart" height="140"></canvas></div>
       </div>
     </section>
     <section class="view hidden" id="view-tiktok">
@@ -90,7 +117,7 @@
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="ttCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="ttReturns">0</div></div>
       </div>
-      <div class="card"><div class="card-head"><h3>TikTok Shop Records</h3><button class="primary-btn" data-add="tiktok">+ Add TikTok Entry</button></div><table class="data-table" id="tiktokTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="card"><div class="card-head"><h3>TikTok Operational Records <span class="badge" style="margin-left:8px;font-size:10px;">🔗 Linked = synced from Sales tab</span></h3><button class="primary-btn" data-add="tiktok">+ Add Operational Entry</button></div><table class="data-table" id="tiktokTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="card"><div class="card-head"><h3>TikTok Performance Trend</h3></div><canvas id="tiktokTrendChart" height="120"></canvas></div>
     </section>
     <section class="view hidden" id="view-shopify">
@@ -100,7 +127,7 @@
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="spCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="spReturns">0</div></div>
       </div>
-      <div class="card"><div class="card-head"><h3>Shopify Records</h3><button class="primary-btn" data-add="shopify">+ Add Shopify Entry</button></div><table class="data-table" id="shopifyTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="card"><div class="card-head"><h3>Shopify Operational Records <span class="badge" style="margin-left:8px;font-size:10px;">🔗 Linked = synced from Sales tab</span></h3><button class="primary-btn" data-add="shopify">+ Add Operational Entry</button></div><table class="data-table" id="shopifyTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="card"><div class="card-head"><h3>Shopify Performance Trend</h3></div><canvas id="shopifyTrendChart" height="120"></canvas></div>
     </section>
     <section class="view hidden" id="view-marketing">
@@ -124,7 +151,7 @@
       <div class="card">
         <div class="card-head"><h3>Product Inventory</h3><button class="primary-btn" data-add="inventory">+ Add Product</button></div>
         <div class="filter-row"><select id="inventoryStockFilter"><option value="">All Stock Levels</option><option value="Critical">Critical</option><option value="Low">Low</option><option value="Healthy">Healthy</option><option value="Overstock">Overstock</option></select><input type="text" id="inventorySearch" placeholder="Search product..." /></div>
-        <table class="data-table" id="inventoryTable"><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Level</th><th>TikTok</th><th>Shopify</th><th>Other Store</th><th>Reorder At</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
+        <table class="data-table" id="inventoryTable"><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Level</th><th>Cost</th><th>Price</th><th>Margin</th><th>TikTok</th><th>Shopify</th><th>Other</th><th>Reorder At</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Stock Health</h3></div><canvas id="invHealthChart" height="140"></canvas></div>
