@@ -12,7 +12,6 @@
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">TGP</div>
@@ -37,8 +36,6 @@
       <button id="themeBtn" class="ghost-btn">Toggle Theme</button>
     </div>
   </aside>
-
-  <!-- Main -->
   <main class="main">
     <header class="topbar">
       <button id="menuToggle" class="icon-btn" aria-label="Toggle menu">☰</button>
@@ -57,212 +54,83 @@
         </div>
       </div>
     </header>
-
     <section class="view" id="view-executive">
       <div class="kpi-grid">
-        <div class="kpi-card grad-1">
-          <div class="kpi-label">Total Revenue</div>
-          <div class="kpi-value" id="kpiRevenue">₱0</div>
-          <div class="kpi-sub" id="kpiRevenueSub">All channels</div>
-        </div>
-        <div class="kpi-card grad-2">
-          <div class="kpi-label">Orders</div>
-          <div class="kpi-value" id="kpiOrders">0</div>
-          <div class="kpi-sub" id="kpiOrdersSub">Combined</div>
-        </div>
-        <div class="kpi-card grad-3">
-          <div class="kpi-label">Avg Order Value</div>
-          <div class="kpi-value" id="kpiAOV">₱0</div>
-          <div class="kpi-sub">Across stores</div>
-        </div>
-        <div class="kpi-card grad-4">
-          <div class="kpi-label">Cancellations</div>
-          <div class="kpi-value" id="kpiCancel">0</div>
-          <div class="kpi-sub" id="kpiCancelRate">0% rate</div>
-        </div>
-        <div class="kpi-card grad-5">
-          <div class="kpi-label">Returns / Refunds</div>
-          <div class="kpi-value" id="kpiReturns">0</div>
-          <div class="kpi-sub" id="kpiReturnsRate">0% rate</div>
-        </div>
-        <div class="kpi-card grad-6">
-          <div class="kpi-label">Ad Spend / ROAS</div>
-          <div class="kpi-value" id="kpiROAS">0×</div>
-          <div class="kpi-sub" id="kpiAdSpend">₱0 spent</div>
-        </div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-sub" id="kpiRevenueSub">All channels</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Orders</div><div class="kpi-value" id="kpiOrders">0</div><div class="kpi-sub" id="kpiOrdersSub">Combined</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="kpiAOV">$0</div><div class="kpi-sub">Across stores</div></div>
+        <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="kpiCancel">0</div><div class="kpi-sub" id="kpiCancelRate">0% rate</div></div>
+        <div class="kpi-card grad-5"><div class="kpi-label">Returns / Refunds</div><div class="kpi-value" id="kpiReturns">0</div><div class="kpi-sub" id="kpiReturnsRate">0% rate</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Ad Spend / ROAS</div><div class="kpi-value" id="kpiROAS">0×</div><div class="kpi-sub" id="kpiAdSpend">$0 spent</div></div>
       </div>
-
       <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <h3>Revenue by Channel</h3>
-            <span class="badge">Live</span>
-          </div>
-          <canvas id="execRevenueChart" height="160"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-head">
-            <h3>Channel Mix</h3>
-          </div>
-          <canvas id="execMixChart" height="160"></canvas>
-        </div>
+        <div class="card"><div class="card-head"><h3>Revenue by Channel</h3><span class="badge">Live</span></div><canvas id="execRevenueChart" height="160"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Channel Mix</h3></div><canvas id="execMixChart" height="160"></canvas></div>
       </div>
-
       <div class="grid-2">
-        <div class="card">
-          <div class="card-head"><h3>Top Performing Products</h3></div>
-          <table class="data-table" id="topProductsTable">
-            <thead><tr><th>Product</th><th>Channel</th><th>Units</th><th>Revenue</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Recent Activity</h3></div>
-          <ul class="activity-list" id="activityList"></ul>
-        </div>
+        <div class="card"><div class="card-head"><h3>Top Performing Products</h3></div><table class="data-table" id="topProductsTable"><thead><tr><th>Product</th><th>Channel</th><th>Units</th><th>Revenue</th></tr></thead><tbody></tbody></table></div>
+        <div class="card"><div class="card-head"><h3>Recent Activity</h3></div><ul class="activity-list" id="activityList"></ul></div>
       </div>
     </section>
-
     <section class="view hidden" id="view-sales">
       <div class="card">
-        <div class="card-head">
-          <h3>Sales Entries</h3>
-          <button class="primary-btn" data-add="sales">+ Add Sale Entry</button>
-        </div>
-        <div class="filter-row">
-          <select id="salesChannelFilter">
-            <option value="">All Channels</option>
-            <option value="TikTok">TikTok Shop</option>
-            <option value="Shopify">Shopify</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <table class="data-table" id="salesTable">
-          <thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Revenue</th><th>Notes</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-head"><h3>Sales Entries</h3><button class="primary-btn" data-add="sales">+ Add Sale Entry</button></div>
+        <div class="filter-row"><select id="salesChannelFilter"><option value="">All Channels</option><option value="TikTok">TikTok Shop</option><option value="Shopify">Shopify</option><option value="Other">Other</option></select></div>
+        <table class="data-table" id="salesTable"><thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Revenue</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
-        <div class="card">
-          <div class="card-head"><h3>Sales Trend</h3></div>
-          <canvas id="salesTrendChart" height="140"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Channel Comparison</h3></div>
-          <canvas id="salesChannelChart" height="140"></canvas>
-        </div>
+        <div class="card"><div class="card-head"><h3>Sales Trend</h3></div><canvas id="salesTrendChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Channel Comparison</h3></div><canvas id="salesChannelChart" height="140"></canvas></div>
       </div>
     </section>
-
     <section class="view hidden" id="view-tiktok">
       <div class="kpi-grid kpi-4">
-        <div class="kpi-card grad-1"><div class="kpi-label">TikTok Revenue</div><div class="kpi-value" id="ttRevenue">₱0</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">TikTok Revenue</div><div class="kpi-value" id="ttRevenue">$0</div></div>
         <div class="kpi-card grad-2"><div class="kpi-label">Orders Fulfilled</div><div class="kpi-value" id="ttFulfilled">0</div></div>
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="ttCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="ttReturns">0</div></div>
       </div>
-      <div class="card">
-        <div class="card-head">
-          <h3>TikTok Shop Records</h3>
-          <button class="primary-btn" data-add="tiktok">+ Add TikTok Entry</button>
-        </div>
-        <table class="data-table" id="tiktokTable">
-          <thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>TikTok Performance Trend</h3></div>
-        <canvas id="tiktokTrendChart" height="120"></canvas>
-      </div>
+      <div class="card"><div class="card-head"><h3>TikTok Shop Records</h3><button class="primary-btn" data-add="tiktok">+ Add TikTok Entry</button></div><table class="data-table" id="tiktokTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="card"><div class="card-head"><h3>TikTok Performance Trend</h3></div><canvas id="tiktokTrendChart" height="120"></canvas></div>
     </section>
-
     <section class="view hidden" id="view-shopify">
       <div class="kpi-grid kpi-4">
-        <div class="kpi-card grad-1"><div class="kpi-label">Shopify Revenue</div><div class="kpi-value" id="spRevenue">₱0</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Shopify Revenue</div><div class="kpi-value" id="spRevenue">$0</div></div>
         <div class="kpi-card grad-2"><div class="kpi-label">Orders Fulfilled</div><div class="kpi-value" id="spFulfilled">0</div></div>
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="spCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="spReturns">0</div></div>
       </div>
-      <div class="card">
-        <div class="card-head">
-          <h3>Shopify Records</h3>
-          <button class="primary-btn" data-add="shopify">+ Add Shopify Entry</button>
-        </div>
-        <table class="data-table" id="shopifyTable">
-          <thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>Shopify Performance Trend</h3></div>
-        <canvas id="shopifyTrendChart" height="120"></canvas>
-      </div>
+      <div class="card"><div class="card-head"><h3>Shopify Records</h3><button class="primary-btn" data-add="shopify">+ Add Shopify Entry</button></div><table class="data-table" id="shopifyTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="card"><div class="card-head"><h3>Shopify Performance Trend</h3></div><canvas id="shopifyTrendChart" height="120"></canvas></div>
     </section>
-
     <section class="view hidden" id="view-marketing">
       <div class="kpi-grid kpi-4">
-        <div class="kpi-card grad-3"><div class="kpi-label">Total Ad Spend</div><div class="kpi-value" id="mkSpend">₱0</div></div>
-        <div class="kpi-card grad-1"><div class="kpi-label">Attributed Revenue</div><div class="kpi-value" id="mkRevenue">₱0</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Total Ad Spend</div><div class="kpi-value" id="mkSpend">$0</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Attributed Revenue</div><div class="kpi-value" id="mkRevenue">$0</div></div>
         <div class="kpi-card grad-2"><div class="kpi-label">ROAS</div><div class="kpi-value" id="mkROAS">0×</div></div>
-        <div class="kpi-card grad-6"><div class="kpi-label">Discounts Issued</div><div class="kpi-value" id="mkDiscounts">₱0</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Discounts Issued</div><div class="kpi-value" id="mkDiscounts">$0</div></div>
       </div>
       <div class="card">
-        <div class="card-head">
-          <h3>Marketing Activities</h3>
-          <button class="primary-btn" data-add="marketing">+ Add Marketing Entry</button>
-        </div>
-        <div class="filter-row">
-          <select id="marketingTypeFilter">
-            <option value="">All Types</option>
-            <option value="Coupon">Coupon</option>
-            <option value="Discount">Discount</option>
-            <option value="Ads">Ads</option>
-            <option value="Affiliate">Affiliate</option>
-          </select>
-        </div>
-        <table class="data-table" id="marketingTable">
-          <thead><tr><th>Date</th><th>Type</th><th>Channel</th><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Notes</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-head"><h3>Marketing Activities</h3><button class="primary-btn" data-add="marketing">+ Add Marketing Entry</button></div>
+        <div class="filter-row"><select id="marketingTypeFilter"><option value="">All Types</option><option value="Coupon">Coupon</option><option value="Discount">Discount</option><option value="Ads">Ads</option><option value="Affiliate">Affiliate</option></select></div>
+        <table class="data-table" id="marketingTable"><thead><tr><th>Date</th><th>Type</th><th>Channel</th><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Spend vs Revenue</h3></div><canvas id="mkSpendChart" height="140"></canvas></div>
         <div class="card"><div class="card-head"><h3>By Type</h3></div><canvas id="mkTypeChart" height="140"></canvas></div>
       </div>
     </section>
-
     <section class="view hidden" id="view-inventory">
       <div class="card">
-        <div class="card-head">
-          <h3>Product Inventory</h3>
-          <button class="primary-btn" data-add="inventory">+ Add Product</button>
-        </div>
-        <div class="filter-row">
-          <select id="inventoryStockFilter">
-            <option value="">All Stock Levels</option>
-            <option value="Critical">Critical</option>
-            <option value="Low">Low</option>
-            <option value="Healthy">Healthy</option>
-            <option value="Overstock">Overstock</option>
-          </select>
-          <input type="text" id="inventorySearch" placeholder="Search product..." />
-        </div>
-        <table class="data-table" id="inventoryTable">
-          <thead><tr>
-            <th>Product</th><th>SKU</th><th>Stock</th><th>Level</th>
-            <th>TikTok</th><th>Shopify</th><th>Other Store</th>
-            <th>Reorder At</th><th>Remarks</th><th></th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-head"><h3>Product Inventory</h3><button class="primary-btn" data-add="inventory">+ Add Product</button></div>
+        <div class="filter-row"><select id="inventoryStockFilter"><option value="">All Stock Levels</option><option value="Critical">Critical</option><option value="Low">Low</option><option value="Healthy">Healthy</option><option value="Overstock">Overstock</option></select><input type="text" id="inventorySearch" placeholder="Search product..." /></div>
+        <table class="data-table" id="inventoryTable"><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Level</th><th>TikTok</th><th>Shopify</th><th>Other Store</th><th>Reorder At</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Stock Health</h3></div><canvas id="invHealthChart" height="140"></canvas></div>
         <div class="card"><div class="card-head"><h3>Channel Listing Coverage</h3></div><canvas id="invCoverageChart" height="140"></canvas></div>
       </div>
     </section>
-
     <section class="view hidden" id="view-customer">
       <div class="kpi-grid kpi-4">
         <div class="kpi-card grad-1"><div class="kpi-label">Positive Reviews</div><div class="kpi-value" id="cxPositive">0</div></div>
@@ -271,30 +139,9 @@
         <div class="kpi-card grad-2"><div class="kpi-label">Resolution Rate</div><div class="kpi-value" id="cxResolution">0%</div></div>
       </div>
       <div class="card">
-        <div class="card-head">
-          <h3>Customer Reviews & Complaints</h3>
-          <button class="primary-btn" data-add="customer">+ Add Review</button>
-        </div>
-        <div class="filter-row">
-          <select id="cxSentimentFilter">
-            <option value="">All Sentiment</option>
-            <option value="Positive">Positive</option>
-            <option value="Negative">Negative</option>
-            <option value="Neutral">Neutral</option>
-          </select>
-          <select id="cxCategoryFilter">
-            <option value="">All Categories</option>
-            <option value="Product">Product</option>
-            <option value="Customer Service">Customer Service</option>
-            <option value="Shop">Shop</option>
-            <option value="Delivery">Delivery</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <table class="data-table" id="customerTable">
-          <thead><tr><th>Date</th><th>Channel</th><th>Sentiment</th><th>Rating</th><th>Category</th><th>Customer</th><th>Comment</th><th>Status</th><th>Remarks</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-head"><h3>Customer Reviews &amp; Complaints</h3><button class="primary-btn" data-add="customer">+ Add Review</button></div>
+        <div class="filter-row"><select id="cxSentimentFilter"><option value="">All Sentiment</option><option value="Positive">Positive</option><option value="Negative">Negative</option><option value="Neutral">Neutral</option></select><select id="cxCategoryFilter"><option value="">All Categories</option><option value="Product">Product</option><option value="Customer Service">Customer Service</option><option value="Shop">Shop</option><option value="Delivery">Delivery</option><option value="Other">Other</option></select></div>
+        <table class="data-table" id="customerTable"><thead><tr><th>Date</th><th>Channel</th><th>Sentiment</th><th>Rating</th><th>Category</th><th>Customer</th><th>Comment</th><th>Status</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="grid-2">
         <div class="card"><div class="card-head"><h3>Sentiment Over Time</h3></div><canvas id="cxSentimentChart" height="140"></canvas></div>
@@ -303,24 +150,14 @@
     </section>
   </main>
 </div>
-
-<!-- Modal -->
 <div class="modal hidden" id="modal">
   <div class="modal-card">
-    <div class="modal-head">
-      <h3 id="modalTitle">Add Entry</h3>
-      <button class="icon-btn" id="modalClose">✕</button>
-    </div>
+    <div class="modal-head"><h3 id="modalTitle">Add Entry</h3><button class="icon-btn" id="modalClose">✕</button></div>
     <form id="modalForm" class="modal-body"></form>
-    <div class="modal-foot">
-      <button class="ghost-btn" id="modalCancel">Cancel</button>
-      <button class="primary-btn" id="modalSave">Save</button>
-    </div>
+    <div class="modal-foot"><button class="ghost-btn" id="modalCancel">Cancel</button><button class="primary-btn" id="modalSave">Save</button></div>
   </div>
 </div>
-
 <div id="toast" class="toast hidden"></div>
-
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
