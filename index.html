@@ -2,13 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1020" />
 <title>TGP Ultimate Dashboard</title>
 <link rel="stylesheet" href="styles.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Excel/CSV import -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- PDF text extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -22,19 +27,18 @@
     </div>
     <nav class="nav">
       <button class="nav-item active" data-view="executive"><span class="nav-icon">▣</span> Executive Summary</button>
-      <button class="nav-item" data-view="sales"><span class="nav-icon">▲</span> Sales Performance</button>
-      <button class="nav-item" data-view="profitability"><span class="nav-icon">$</span> Profitability</button>
+      <button class="nav-item" data-view="sales"><span class="nav-icon">▲</span> Sales Report</button>
+      <button class="nav-item" data-view="returns"><span class="nav-icon">↺</span> Returns &amp; Refunds</button>
       <button class="nav-item" data-view="tiktok"><span class="nav-icon">♪</span> TikTok Shop</button>
       <button class="nav-item" data-view="shopify"><span class="nav-icon">●</span> Shopify</button>
-      <button class="nav-item" data-view="marketing"><span class="nav-icon">✦</span> Marketing</button>
+      <button class="nav-item" data-view="marketing"><span class="nav-icon">✦</span> Marketing &amp; Coupons</button>
       <button class="nav-item" data-view="inventory"><span class="nav-icon">▦</span> Inventory</button>
-      <button class="nav-item" data-view="customer"><span class="nav-icon">♥</span> Customer Experience</button>
+      <button class="nav-item" data-view="customer"><span class="nav-icon">♥</span> Customers</button>
     </nav>
     <div class="sidebar-footer">
-      <button id="exportBtn" class="ghost-btn">Export Data</button>
-      <button id="importBtn" class="ghost-btn">Import Data</button>
-      <input type="file" id="importFile" accept="application/json" hidden />
-      <button id="themeBtn" class="ghost-btn">Toggle Theme</button>
+      <button id="exportBtn" class="ghost-btn">↓ Export Backup</button>
+      <button id="importBtn" class="ghost-btn">↑ Import Data</button>
+      <button id="themeBtn" class="ghost-btn">🌓 Toggle Theme</button>
     </div>
   </aside>
   <main class="main">
@@ -45,7 +49,7 @@
         <div class="date-range">
           <label>From <input type="date" id="dateFrom" /></label>
           <label>To <input type="date" id="dateTo" /></label>
-          <select id="grain">
+          <select id="grain" aria-label="Grain">
             <option value="day">Daily</option>
             <option value="week">Weekly</option>
             <option value="month">Monthly</option>
@@ -55,9 +59,11 @@
         </div>
       </div>
     </header>
+
+    <!-- EXECUTIVE SUMMARY -->
     <section class="view" id="view-executive">
       <div class="kpi-grid">
-        <div class="kpi-card grad-1"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-sub" id="kpiRevenueSub">All channels</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpiRevenue">$0</div><div class="kpi-sub">All channels</div></div>
         <div class="kpi-card grad-2"><div class="kpi-label">Orders</div><div class="kpi-value" id="kpiOrders">0</div><div class="kpi-sub" id="kpiOrdersSub">0 units</div></div>
         <div class="kpi-card grad-3"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="kpiAOV">$0</div><div class="kpi-sub">Per transaction</div></div>
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="kpiCancel">0</div><div class="kpi-sub" id="kpiCancelRate">0% rate</div></div>
@@ -65,51 +71,79 @@
         <div class="kpi-card grad-6"><div class="kpi-label">Ad Spend / ROAS</div><div class="kpi-value" id="kpiROAS">0×</div><div class="kpi-sub" id="kpiAdSpend">$0 spent</div></div>
       </div>
       <div class="kpi-grid">
-        <div class="kpi-card grad-3"><div class="kpi-label">Gross Profit</div><div class="kpi-value" id="kpiGrossProfit">$0</div><div class="kpi-sub">Revenue − COGS</div></div>
-        <div class="kpi-card grad-2"><div class="kpi-label">Net Profit</div><div class="kpi-value" id="kpiNetProfit">$0</div><div class="kpi-sub">After ad spend</div></div>
-        <div class="kpi-card grad-1"><div class="kpi-label">Profit Margin</div><div class="kpi-value" id="kpiProfitMargin">0%</div><div class="kpi-sub">Gross profit ÷ revenue</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">TikTok Revenue</div><div class="kpi-value" id="kpiTTRev">$0</div><div class="kpi-sub">Sales channel</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Shopify Revenue</div><div class="kpi-value" id="kpiSPRev">$0</div><div class="kpi-sub">Sales channel</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Total Customers</div><div class="kpi-value" id="kpiCustomers">0</div><div class="kpi-sub">Records on file</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Coupons Redeemed</div><div class="kpi-value" id="kpiCoupons">0</div><div class="kpi-sub">All campaigns</div></div>
+        <div class="kpi-card grad-4"><div class="kpi-label">Discount Value</div><div class="kpi-value" id="kpiDiscountValue">$0</div><div class="kpi-sub">Coupon revenue</div></div>
+        <div class="kpi-card grad-5"><div class="kpi-label">Avg Rating</div><div class="kpi-value" id="kpiRating">0.0</div><div class="kpi-sub">Customer reviews</div></div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Revenue by Channel</h3><span class="badge">Live</span></div><canvas id="execRevenueChart" height="160"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Channel Mix</h3></div><canvas id="execMixChart" height="160"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Revenue by Channel</h3><span class="badge">Live</span></div><div class="chart-wrap"><canvas id="execRevenueChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Channel Mix</h3></div><div class="chart-wrap"><canvas id="execMixChart"></canvas></div></div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Top Performing Products</h3></div><table class="data-table" id="topProductsTable"><thead><tr><th>Product</th><th>Channel</th><th>Units</th><th>Revenue</th></tr></thead><tbody></tbody></table></div>
+        <div class="card"><div class="card-head"><h3>Top Performing Products</h3></div>
+          <div class="table-wrap"><table class="data-table" id="topProductsTable"><thead><tr><th>Product</th><th>Channel</th><th>Units</th><th>Revenue</th></tr></thead><tbody></tbody></table></div>
+        </div>
         <div class="card"><div class="card-head"><h3>Recent Activity</h3></div><ul class="activity-list" id="activityList"></ul></div>
       </div>
     </section>
+
+    <!-- SALES REPORT -->
     <section class="view hidden" id="view-sales">
+      <div class="kpi-grid kpi-4">
+        <div class="kpi-card grad-1"><div class="kpi-label">Sales Revenue</div><div class="kpi-value" id="salesTotalRev">$0</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="salesTotalOrders">0</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Units Sold</div><div class="kpi-value" id="salesTotalUnits">0</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Avg Order Value</div><div class="kpi-value" id="salesAOV">$0</div></div>
+      </div>
       <div class="card">
-        <div class="card-head"><h3>Sales Entries <span class="badge" style="margin-left:8px;background:rgba(124,92,255,0.2);color:#7c5cff;">Auto-syncs to TikTok / Shopify tabs</span></h3><button class="primary-btn" data-add="sales">+ Add Sale Entry</button></div>
+        <div class="card-head"><h3>Sales Entries <span class="badge subtle">Auto-syncs to TikTok / Shopify ops</span></h3><button class="primary-btn" data-add="sales">+ Add Sale</button></div>
         <div class="filter-row"><select id="salesChannelFilter"><option value="">All Channels</option><option value="TikTok">TikTok Shop</option><option value="Shopify">Shopify</option><option value="Other">Other</option></select></div>
-        <table class="data-table" id="salesTable"><thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Revenue</th><th>Profit</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="table-wrap">
+          <table class="data-table" id="salesTable">
+            <thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Price</th><th>Total Sale</th><th>Customer</th><th>Order #</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Sales Trend</h3></div><canvas id="salesTrendChart" height="140"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Channel Comparison</h3></div><canvas id="salesChannelChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Sales Trend</h3></div><div class="chart-wrap"><canvas id="salesTrendChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Channel Comparison</h3></div><div class="chart-wrap"><canvas id="salesChannelChart"></canvas></div></div>
       </div>
     </section>
-    <section class="view hidden" id="view-profitability">
+
+    <!-- RETURNS & REFUNDS -->
+    <section class="view hidden" id="view-returns">
       <div class="kpi-grid">
-        <div class="kpi-card grad-2"><div class="kpi-label">Revenue</div><div class="kpi-value" id="pfRevenue">$0</div><div class="kpi-sub">Total sales</div></div>
-        <div class="kpi-card grad-4"><div class="kpi-label">Cost of Goods</div><div class="kpi-value" id="pfCOGS">$0</div><div class="kpi-sub">Units × cost</div></div>
-        <div class="kpi-card grad-3"><div class="kpi-label">Gross Profit</div><div class="kpi-value" id="pfGrossProfit">$0</div><div class="kpi-sub">Before ad spend</div></div>
-        <div class="kpi-card grad-6"><div class="kpi-label">Ad Spend</div><div class="kpi-value" id="pfAdSpend">$0</div><div class="kpi-sub">Marketing</div></div>
-        <div class="kpi-card grad-1"><div class="kpi-label">Net Profit</div><div class="kpi-value" id="pfNetProfit">$0</div><div class="kpi-sub">After all costs</div></div>
-        <div class="kpi-card grad-5"><div class="kpi-label">Margins</div><div class="kpi-value" id="pfGrossMargin">0%</div><div class="kpi-sub">Gross / Net: <span id="pfNetMargin">0%</span></div></div>
+        <div class="kpi-card grad-5"><div class="kpi-label">Units Returned</div><div class="kpi-value" id="rtUnits">0</div><div class="kpi-sub">In selected period</div></div>
+        <div class="kpi-card grad-4"><div class="kpi-label">Refund Amount</div><div class="kpi-value" id="rtRefund">$0</div><div class="kpi-sub">Total refunded</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Return Rate</div><div class="kpi-value" id="rtRate">0%</div><div class="kpi-sub">vs units sold</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">TikTok Returns</div><div class="kpi-value" id="rtTikTok">0</div><div class="kpi-sub">Records</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Shopify Returns</div><div class="kpi-value" id="rtShopify">0</div><div class="kpi-sub">Records</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Pending Approval</div><div class="kpi-value" id="rtPending">0</div><div class="kpi-sub">Awaiting action</div></div>
       </div>
       <div class="card">
-        <div class="card-head"><h3>Profit by Product</h3></div>
-        <table class="data-table" id="profitProductTable">
-          <thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Cost of Goods</th><th>Gross Profit</th><th>Margin</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-head"><h3>Return Records</h3><button class="primary-btn" data-add="returns">+ Add Return Record</button></div>
+        <div class="filter-row">
+          <select id="returnsChannelFilter"><option value="">All Channels</option><option value="TikTok">TikTok</option><option value="Shopify">Shopify</option><option value="Other">Other</option></select>
+          <select id="returnsStatusFilter"><option value="">All Statuses</option><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Refunded">Refunded</option><option value="Replaced">Replaced</option><option value="Rejected">Rejected</option></select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="returnsTable">
+            <thead><tr><th>Date</th><th>Channel</th><th>Product</th><th>Units</th><th>Refund $</th><th>Reason</th><th>Status</th><th>Customer</th><th>Order #</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Revenue vs Profit Trend</h3></div><canvas id="profitTrendChart" height="140"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Profit Breakdown</h3></div><canvas id="profitBreakdownChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Returns Trend</h3></div><div class="chart-wrap"><canvas id="returnsTrendChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Reasons Breakdown</h3></div><div class="chart-wrap"><canvas id="returnsReasonChart"></canvas></div></div>
       </div>
     </section>
+
+    <!-- TIKTOK -->
     <section class="view hidden" id="view-tiktok">
       <div class="kpi-grid kpi-4">
         <div class="kpi-card grad-1"><div class="kpi-label">TikTok Revenue</div><div class="kpi-value" id="ttRevenue">$0</div></div>
@@ -117,9 +151,19 @@
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="ttCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="ttReturns">0</div></div>
       </div>
-      <div class="card"><div class="card-head"><h3>TikTok Operational Records <span class="badge" style="margin-left:8px;font-size:10px;">🔗 Linked = synced from Sales tab</span></h3><button class="primary-btn" data-add="tiktok">+ Add Operational Entry</button></div><table class="data-table" id="tiktokTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
-      <div class="card"><div class="card-head"><h3>TikTok Performance Trend</h3></div><canvas id="tiktokTrendChart" height="120"></canvas></div>
+      <div class="card">
+        <div class="card-head"><h3>TikTok Operational Records <span class="badge subtle">🔗 Linked = synced from Sales</span></h3><button class="primary-btn" data-add="tiktok">+ Add Operational Entry</button></div>
+        <div class="table-wrap">
+          <table class="data-table" id="tiktokTable">
+            <thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><h3>TikTok Performance Trend</h3></div><div class="chart-wrap"><canvas id="tiktokTrendChart"></canvas></div></div>
     </section>
+
+    <!-- SHOPIFY -->
     <section class="view hidden" id="view-shopify">
       <div class="kpi-grid kpi-4">
         <div class="kpi-card grad-1"><div class="kpi-label">Shopify Revenue</div><div class="kpi-value" id="spRevenue">$0</div></div>
@@ -127,63 +171,126 @@
         <div class="kpi-card grad-4"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="spCancel">0</div></div>
         <div class="kpi-card grad-5"><div class="kpi-label">Returns/Refunds</div><div class="kpi-value" id="spReturns">0</div></div>
       </div>
-      <div class="card"><div class="card-head"><h3>Shopify Operational Records <span class="badge" style="margin-left:8px;font-size:10px;">🔗 Linked = synced from Sales tab</span></h3><button class="primary-btn" data-add="shopify">+ Add Operational Entry</button></div><table class="data-table" id="shopifyTable"><thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table></div>
-      <div class="card"><div class="card-head"><h3>Shopify Performance Trend</h3></div><canvas id="shopifyTrendChart" height="120"></canvas></div>
+      <div class="card">
+        <div class="card-head"><h3>Shopify Operational Records <span class="badge subtle">🔗 Linked = synced from Sales</span></h3><button class="primary-btn" data-add="shopify">+ Add Operational Entry</button></div>
+        <div class="table-wrap">
+          <table class="data-table" id="shopifyTable">
+            <thead><tr><th>Date</th><th>Product</th><th>Inventory</th><th>Sales</th><th>Fulfilled</th><th>Cancelled</th><th>Returns</th><th>Claims</th><th>Refunded</th><th>Replaced</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Shopify Performance Trend</h3></div><div class="chart-wrap"><canvas id="shopifyTrendChart"></canvas></div></div>
     </section>
+
+    <!-- MARKETING & COUPONS -->
     <section class="view hidden" id="view-marketing">
-      <div class="kpi-grid kpi-4">
+      <div class="kpi-grid kpi-5">
         <div class="kpi-card grad-3"><div class="kpi-label">Total Ad Spend</div><div class="kpi-value" id="mkSpend">$0</div></div>
         <div class="kpi-card grad-1"><div class="kpi-label">Attributed Revenue</div><div class="kpi-value" id="mkRevenue">$0</div></div>
         <div class="kpi-card grad-2"><div class="kpi-label">ROAS</div><div class="kpi-value" id="mkROAS">0×</div></div>
-        <div class="kpi-card grad-6"><div class="kpi-label">Discounts Issued</div><div class="kpi-value" id="mkDiscounts">$0</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">Coupons Redeemed</div><div class="kpi-value" id="mkCouponUses">0</div></div>
+        <div class="kpi-card grad-4"><div class="kpi-label">Discount Value</div><div class="kpi-value" id="mkDiscounts">$0</div></div>
       </div>
       <div class="card">
-        <div class="card-head"><h3>Marketing Activities</h3><button class="primary-btn" data-add="marketing">+ Add Marketing Entry</button></div>
+        <div class="card-head"><h3>Marketing &amp; Coupon Activities</h3><button class="primary-btn" data-add="marketing">+ Add Entry</button></div>
         <div class="filter-row"><select id="marketingTypeFilter"><option value="">All Types</option><option value="Coupon">Coupon</option><option value="Discount">Discount</option><option value="Ads">Ads</option><option value="Affiliate">Affiliate</option></select></div>
-        <table class="data-table" id="marketingTable"><thead><tr><th>Date</th><th>Type</th><th>Channel</th><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="table-wrap">
+          <table class="data-table" id="marketingTable">
+            <thead><tr><th>Date</th><th>Type</th><th>Channel</th><th>Campaign / Code</th><th>Redemptions</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Notes</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Spend vs Revenue</h3></div><canvas id="mkSpendChart" height="140"></canvas></div>
-        <div class="card"><div class="card-head"><h3>By Type</h3></div><canvas id="mkTypeChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Spend vs Revenue</h3></div><div class="chart-wrap"><canvas id="mkSpendChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>By Type</h3></div><div class="chart-wrap"><canvas id="mkTypeChart"></canvas></div></div>
       </div>
     </section>
+
+    <!-- INVENTORY -->
     <section class="view hidden" id="view-inventory">
       <div class="card">
         <div class="card-head"><h3>Product Inventory</h3><button class="primary-btn" data-add="inventory">+ Add Product</button></div>
         <div class="filter-row"><select id="inventoryStockFilter"><option value="">All Stock Levels</option><option value="Critical">Critical</option><option value="Low">Low</option><option value="Healthy">Healthy</option><option value="Overstock">Overstock</option></select><input type="text" id="inventorySearch" placeholder="Search product..." /></div>
-        <table class="data-table" id="inventoryTable"><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Level</th><th>Cost</th><th>Price</th><th>Margin</th><th>TikTok</th><th>Shopify</th><th>Other</th><th>Reorder At</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="table-wrap">
+          <table class="data-table" id="inventoryTable">
+            <thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Level</th><th>Price</th><th>TikTok</th><th>Shopify</th><th>Other</th><th>Reorder At</th><th>Remarks</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Stock Health</h3></div><canvas id="invHealthChart" height="140"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Channel Listing Coverage</h3></div><canvas id="invCoverageChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Stock Health</h3></div><div class="chart-wrap"><canvas id="invHealthChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Channel Listing Coverage</h3></div><div class="chart-wrap"><canvas id="invCoverageChart"></canvas></div></div>
       </div>
     </section>
+
+    <!-- CUSTOMERS (records + reviews) -->
     <section class="view hidden" id="view-customer">
       <div class="kpi-grid kpi-4">
-        <div class="kpi-card grad-1"><div class="kpi-label">Positive Reviews</div><div class="kpi-value" id="cxPositive">0</div></div>
-        <div class="kpi-card grad-5"><div class="kpi-label">Negative Reviews</div><div class="kpi-value" id="cxNegative">0</div></div>
-        <div class="kpi-card grad-3"><div class="kpi-label">Avg Rating</div><div class="kpi-value" id="cxRating">0.0</div></div>
-        <div class="kpi-card grad-2"><div class="kpi-label">Resolution Rate</div><div class="kpi-value" id="cxResolution">0%</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">Total Customers</div><div class="kpi-value" id="cxCustomerCount">0</div></div>
+        <div class="kpi-card grad-6"><div class="kpi-label">VIP Customers</div><div class="kpi-value" id="cxVIPCount">0</div></div>
+        <div class="kpi-card grad-3"><div class="kpi-label">Active Customers</div><div class="kpi-value" id="cxActiveCount">0</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Avg Rating</div><div class="kpi-value" id="cxRating">0.0</div></div>
       </div>
       <div class="card">
-        <div class="card-head"><h3>Customer Reviews &amp; Complaints</h3><button class="primary-btn" data-add="customer">+ Add Review</button></div>
-        <div class="filter-row"><select id="cxSentimentFilter"><option value="">All Sentiment</option><option value="Positive">Positive</option><option value="Negative">Negative</option><option value="Neutral">Neutral</option></select><select id="cxCategoryFilter"><option value="">All Categories</option><option value="Product">Product</option><option value="Customer Service">Customer Service</option><option value="Shop">Shop</option><option value="Delivery">Delivery</option><option value="Other">Other</option></select></div>
-        <table class="data-table" id="customerTable"><thead><tr><th>Date</th><th>Channel</th><th>Sentiment</th><th>Rating</th><th>Category</th><th>Customer</th><th>Comment</th><th>Status</th><th>Remarks</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="card-head"><h3>Customer Records</h3><button class="primary-btn" data-add="customers">+ Add Customer</button></div>
+        <div class="filter-row">
+          <select id="customersStatusFilter"><option value="">All Statuses</option><option value="New">New</option><option value="Active">Active</option><option value="VIP">VIP</option><option value="Inactive">Inactive</option></select>
+          <input type="text" id="customersSearch" placeholder="Search name, email, phone, tags..." />
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="customersTable">
+            <thead><tr><th>Name</th><th>Contact</th><th>Channel</th><th>Orders</th><th>Total Spent</th><th>Returns</th><th>Last Order</th><th>Status</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="kpi-grid kpi-4">
+        <div class="kpi-card grad-3"><div class="kpi-label">Positive Reviews</div><div class="kpi-value" id="cxPositive">0</div></div>
+        <div class="kpi-card grad-5"><div class="kpi-label">Negative Reviews</div><div class="kpi-value" id="cxNegative">0</div></div>
+        <div class="kpi-card grad-2"><div class="kpi-label">Resolution Rate</div><div class="kpi-value" id="cxResolution">0%</div></div>
+        <div class="kpi-card grad-1"><div class="kpi-label">&nbsp;</div><div class="kpi-value">&nbsp;</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Reviews &amp; Complaints</h3><button class="primary-btn" data-add="customer">+ Add Review</button></div>
+        <div class="filter-row">
+          <select id="cxSentimentFilter"><option value="">All Sentiment</option><option value="Positive">Positive</option><option value="Negative">Negative</option><option value="Neutral">Neutral</option></select>
+          <select id="cxCategoryFilter"><option value="">All Categories</option><option value="Product">Product</option><option value="Customer Service">Customer Service</option><option value="Shop">Shop</option><option value="Delivery">Delivery</option><option value="Other">Other</option></select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="customerTable">
+            <thead><tr><th>Date</th><th>Channel</th><th>Sentiment</th><th>Rating</th><th>Category</th><th>Customer</th><th>Comment</th><th>Status</th><th>Remarks</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="card"><div class="card-head"><h3>Sentiment Over Time</h3></div><canvas id="cxSentimentChart" height="140"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Complaint Categories</h3></div><canvas id="cxCategoryChart" height="140"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Sentiment Over Time</h3></div><div class="chart-wrap"><canvas id="cxSentimentChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Complaint Categories</h3></div><div class="chart-wrap"><canvas id="cxCategoryChart"></canvas></div></div>
       </div>
     </section>
   </main>
 </div>
+
+<!-- Add/Edit Modal -->
 <div class="modal hidden" id="modal">
   <div class="modal-card">
     <div class="modal-head"><h3 id="modalTitle">Add Entry</h3><button class="icon-btn" id="modalClose">✕</button></div>
-    <form id="modalForm" class="modal-body"></form>
+    <form id="modalForm" class="modal-body" autocomplete="off"></form>
     <div class="modal-foot"><button class="ghost-btn" id="modalCancel">Cancel</button><button class="primary-btn" id="modalSave">Save</button></div>
   </div>
 </div>
+
+<!-- Import Modal -->
+<div class="modal hidden" id="importModal">
+  <div class="modal-card import-card">
+    <div class="modal-head"><h3>Import Data</h3><button class="icon-btn" id="importClose">✕</button></div>
+    <div id="importBody" class="modal-body single-col"></div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
 <script type="module" src="app.js"></script>
 </body>
